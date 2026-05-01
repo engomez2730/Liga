@@ -56,8 +56,36 @@ ALTER TABLE gastos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE turnos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "public_all" ON integrantes  FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "public_all" ON pagos         FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "public_all" ON gastos        FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "public_all" ON turnos        FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "public_all" ON configuracion FOR ALL USING (true) WITH CHECK (true);
+-- Everyone can read; only authenticated users (admins) can write
+-- Run this in Supabase SQL Editor after deleting existing "public_all" policies
+
+DROP POLICY IF EXISTS "public_all" ON integrantes;
+DROP POLICY IF EXISTS "public_all" ON pagos;
+DROP POLICY IF EXISTS "public_all" ON gastos;
+DROP POLICY IF EXISTS "public_all" ON turnos;
+DROP POLICY IF EXISTS "public_all" ON configuracion;
+
+-- integrantes
+CREATE POLICY "public_read"  ON integrantes FOR SELECT USING (true);
+CREATE POLICY "auth_write"   ON integrantes FOR ALL
+  USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
+
+-- pagos
+CREATE POLICY "public_read"  ON pagos FOR SELECT USING (true);
+CREATE POLICY "auth_write"   ON pagos FOR ALL
+  USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
+
+-- gastos
+CREATE POLICY "public_read"  ON gastos FOR SELECT USING (true);
+CREATE POLICY "auth_write"   ON gastos FOR ALL
+  USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
+
+-- turnos
+CREATE POLICY "public_read"  ON turnos FOR SELECT USING (true);
+CREATE POLICY "auth_write"   ON turnos FOR ALL
+  USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
+
+-- configuracion
+CREATE POLICY "public_read"  ON configuracion FOR SELECT USING (true);
+CREATE POLICY "auth_write"   ON configuracion FOR ALL
+  USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);

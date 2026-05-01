@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { hoy, nombreDia, PAGO_MONTO } from '../utils/helpers'
+import { useAuth } from '../context/AuthContext'
+import { hoy, nombreDia } from '../utils/helpers'
 
 export default function DatosPanel() {
   const {
     integrantes, pagos, gastos, turnos, fechaBase,
     borrarTodo, importarDatos, showToast, nombreJugador,
   } = useApp()
+  const { isAdmin } = useAuth()
 
   const [importStatus, setImportStatus] = useState(null) // { ok: bool, msg: string }
   const fileRef = useRef(null)
@@ -115,7 +117,8 @@ export default function DatosPanel() {
         </div>
       </div>
 
-      {/* IMPORTAR */}
+      {/* IMPORTAR — solo admin */}
+      {isAdmin && (
       <div className="card">
         <div className="card-title">📥 Importar Datos</div>
         <p className="section-desc">
@@ -152,8 +155,10 @@ export default function DatosPanel() {
           </div>
         )}
       </div>
+      )}
 
-      {/* ZONA DE PELIGRO */}
+      {/* ZONA DE PELIGRO — solo admin */}
+      {isAdmin && (
       <div className="card" style={{ borderColor: 'var(--red-dim)' }}>
         <div className="card-title" style={{ color: 'var(--red)' }}>⚠️ Zona de Peligro</div>
         <p className="section-desc">Esta acción es irreversible. Exporta un respaldo antes de continuar.</p>
@@ -161,6 +166,7 @@ export default function DatosPanel() {
           <button className="btn btn-red" onClick={borrarTodo}>🗑️ Borrar todos los datos</button>
         </div>
       </div>
+      )}
     </>
   )
 }

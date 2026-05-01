@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 import { hoy, formatFecha, CATEGORIAS, CATEGORIA_BADGE } from '../utils/helpers'
 
 export default function GastosPanel() {
   const { pagos, gastos, registrarGasto, eliminarGasto, showToast } = useApp()
+  const { isAdmin } = useAuth()
 
   const [concepto,  setConcepto]  = useState('')
   const [monto,     setMonto]     = useState('')
@@ -37,35 +39,37 @@ export default function GastosPanel() {
 
   return (
     <>
-      <div className="card">
-        <div className="card-title">Registrar Gasto</div>
-        <p className="section-desc">
-          Anota en qué y dónde se utilizó el dinero recaudado de la liga.
-        </p>
-        <div className="form-row">
-          <input
-            type="text" placeholder="Concepto (ej: Cancha, Árbitro…)" maxLength={80}
-            value={concepto} onChange={(e) => setConcepto(e.target.value)}
-          />
-          <input
-            type="number" placeholder="Monto $" min={1} step={1}
-            style={{ maxWidth: 130 }} value={monto} onChange={(e) => setMonto(e.target.value)}
-          />
-          <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      {isAdmin && (
+        <div className="card">
+          <div className="card-title">Registrar Gasto</div>
+          <p className="section-desc">
+            Anota en qué y dónde se utilizó el dinero recaudado de la liga.
+          </p>
+          <div className="form-row">
+            <input
+              type="text" placeholder="Concepto (ej: Cancha, Árbitro…)" maxLength={80}
+              value={concepto} onChange={(e) => setConcepto(e.target.value)}
+            />
+            <input
+              type="number" placeholder="Monto $" min={1} step={1}
+              style={{ maxWidth: 130 }} value={monto} onChange={(e) => setMonto(e.target.value)}
+            />
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </div>
+          <div className="form-row" style={{ alignItems: 'flex-start' }}>
+            <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+              {CATEGORIAS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <textarea
+              placeholder="Nota adicional (opcional)…" style={{ minHeight: 42 }}
+              value={nota} onChange={(e) => setNota(e.target.value)}
+            />
+            <button className="btn btn-yellow" onClick={handleRegistrar}>Registrar Gasto</button>
+          </div>
         </div>
-        <div className="form-row" style={{ alignItems: 'flex-start' }}>
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-            {CATEGORIAS.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
-          <textarea
-            placeholder="Nota adicional (opcional)…" style={{ minHeight: 42 }}
-            value={nota} onChange={(e) => setNota(e.target.value)}
-          />
-          <button className="btn btn-yellow" onClick={handleRegistrar}>Registrar Gasto</button>
-        </div>
-      </div>
+      )}
 
       <div className="card">
         <div className="card-title">Historial de Gastos</div>
@@ -104,7 +108,8 @@ export default function GastosPanel() {
               <thead>
                 <tr>
                   <th>Concepto</th><th>Categoría</th><th>Fecha</th>
-                  <th>Nota</th><th>Monto</th><th>Acción</th>
+                  <th>Nota</th><th>Monto</th>
+                  {isAdmin && <th>Acción</th>}
                 </tr>
               </thead>
               <tbody>
@@ -121,20 +126,25 @@ export default function GastosPanel() {
                       {g.nota || '—'}
                     </td>
                     <td className="mono text-purple" style={{ fontWeight: 600 }}>${g.monto}</td>
-                    <td>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: '6px 12px', fontSize: 11 }}
-                        onClick={() => eliminarGasto(g.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ padding: '6px 12px', fontSize: 11 }}
+                          onClick={() => eliminarGasto(g.id)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+        {!isAdmin && (
+          <div className="public-notice">🔒 Inicia sesión como admin para registrar o eliminar gastos</div>
         )}
       </div>
     </>

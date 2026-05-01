@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 import {
   hoy, parseFecha, nombreDia, formatFecha,
   DIAS_VALIDOS, PAGO_MONTO,
@@ -7,6 +8,7 @@ import {
 
 export default function PagosPanel() {
   const { integrantes, pagos, registrarPago, eliminarPago, nombreJugador, showToast } = useApp()
+  const { isAdmin } = useAuth()
   const [jugadorId, setJugadorId] = useState('')
   const [fecha,     setFecha]     = useState(hoy())
   const [filtro,    setFiltro]    = useState('')
@@ -34,20 +36,22 @@ export default function PagosPanel() {
 
   return (
     <>
-      <div className="card">
-        <div className="card-title">Registrar Pago</div>
-        <p className="section-desc">Solo se aceptan pagos de lunes o miércoles · $25 por sesión</p>
-        <div className="form-row">
-          <select value={jugadorId} onChange={(e) => setJugadorId(e.target.value)}>
-            <option value="">— Seleccionar jugador —</option>
-            {integrantes.map((j) => (
-              <option key={j.id} value={j.id}>{j.nombre}</option>
-            ))}
-          </select>
-          <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-          <button className="btn btn-green" onClick={handleRegistrar}>Registrar Pago</button>
+      {isAdmin && (
+        <div className="card">
+          <div className="card-title">Registrar Pago</div>
+          <p className="section-desc">Solo se aceptan pagos de lunes o miércoles · $25 por sesión</p>
+          <div className="form-row">
+            <select value={jugadorId} onChange={(e) => setJugadorId(e.target.value)}>
+              <option value="">— Seleccionar jugador —</option>
+              {integrantes.map((j) => (
+                <option key={j.id} value={j.id}>{j.nombre}</option>
+              ))}
+            </select>
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            <button className="btn btn-green" onClick={handleRegistrar}>Registrar Pago</button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="card">
         <div className="card-title">Historial de Pagos</div>
@@ -67,7 +71,8 @@ export default function PagosPanel() {
             <table>
               <thead>
                 <tr>
-                  <th>Jugador</th><th>Fecha</th><th>Día</th><th>Monto</th><th>Acción</th>
+                  <th>Jugador</th><th>Fecha</th><th>Día</th><th>Monto</th>
+                  {isAdmin && <th>Acción</th>}
                 </tr>
               </thead>
               <tbody>
@@ -77,20 +82,25 @@ export default function PagosPanel() {
                     <td className="mono" style={{ fontSize: 12 }}>{formatFecha(p.fecha)}</td>
                     <td><span className="badge badge-green">{nombreDia(p.fecha)}</span></td>
                     <td className="mono text-green" style={{ fontWeight: 500 }}>${p.monto}</td>
-                    <td>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: '6px 12px', fontSize: 11 }}
-                        onClick={() => eliminarPago(p.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ padding: '6px 12px', fontSize: 11 }}
+                          onClick={() => eliminarPago(p.id)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+        {!isAdmin && (
+          <div className="public-notice">🔒 Inicia sesión como admin para registrar o eliminar pagos</div>
         )}
       </div>
     </>

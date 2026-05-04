@@ -7,11 +7,18 @@ export default function IntegrantesPanel() {
   const { integrantes, agregarIntegrante, eliminarIntegrante } = useApp()
   const { isAdmin } = useAuth()
   const [nombre, setNombre] = useState('')
+  const [busqueda, setBusqueda] = useState('')
 
   const handleAgregar = async () => {
     const ok = await agregarIntegrante(nombre)
     if (ok) setNombre('')
   }
+
+  const integrantesFiltrados = busqueda.trim()
+    ? integrantes.filter((j) =>
+        j.nombre.toLowerCase().includes(busqueda.trim().toLowerCase())
+      )
+    : integrantes
 
   return (
     <>
@@ -36,8 +43,25 @@ export default function IntegrantesPanel() {
 
       <div className="card">
         <div className="card-title">Lista de Integrantes</div>
+
+        <div className="form-row" style={{ marginBottom: 12 }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar jugador…"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          {busqueda && (
+            <button className="btn btn-ghost" style={{ padding: '6px 12px' }} onClick={() => setBusqueda('')}>
+              ✕
+            </button>
+          )}
+        </div>
+
         {integrantes.length === 0 ? (
           <div className="empty">Aún no hay integrantes registrados.</div>
+        ) : integrantesFiltrados.length === 0 ? (
+          <div className="empty">No se encontraron jugadores con ese nombre.</div>
         ) : (
           <div className="table-wrap">
             <table>
@@ -50,7 +74,7 @@ export default function IntegrantesPanel() {
                 </tr>
               </thead>
               <tbody>
-                {integrantes.map((j, i) => (
+                {integrantesFiltrados.map((j, i) => (
                   <tr key={j.id}>
                     <td className="mono" style={{ color: 'var(--muted)' }}>{i + 1}</td>
                     <td style={{ fontWeight: 500 }}>{j.nombre}</td>

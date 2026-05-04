@@ -10,6 +10,7 @@ export function AppProvider({ children }) {
   const [gastos,      setGastos]      = useState([])
   const [turnos,      setTurnos]      = useState([]) // [{ id, jugador_id, posicion }]
   const [fechaBase,   setFechaBase]   = useState('')
+  const [fechaEvento, setFechaEvento] = useState('')
   const [loading,     setLoading]     = useState(true)
   const [toast,       setToast]       = useState({ msg: '', tipo: 'ok', visible: false })
   const toastTimer = useRef(null)
@@ -52,6 +53,8 @@ export function AppProvider({ children }) {
 
     const fb = (cfgData || []).find((c) => c.key === 'fecha_base')
     if (fb) setFechaBase(fb.value)
+    const fe = (cfgData || []).find((c) => c.key === 'fecha_evento')
+    if (fe) setFechaEvento(fe.value)
 
     setLoading(false)
   }, [showToast])
@@ -149,7 +152,31 @@ export function AppProvider({ children }) {
       .select().single()
     if (error) { showToast('Error al anotar llegada.', 'err'); return false }
     setTurnos((prev) => [...prev, data])
-    showToast(`✅ ${nombreJugador(jugadorId)} → posición #${posicion}`)
+
+    // Registrar pago automático del día
+    const fechaHoy = hoy()
+    const { data: pagoData, error: pagoError } = await supabase
+      .from('pagos')
+      .insert({ jugador_id: jugadorId, fecha: fechaHoy, monto: PAGO_MONTO })
+      .select().single()
+    if (pagoError) {
+      if (pagoError.code === '23505') {
+        showToast(`✅ ${nombreJugador(jugadorId)} → posición #${posicion} (pago ya registrado)`)
+      } else {
+        showToast(`✅ ${nombreJugador(jugadorId)} → posición #${posicion} (pago no registrado)`, 'warn')
+      }
+    } else {
+      setPagos((prev) => [pagoData, ...prev])
+      showToast(`✅ ${nombreJugador(jugadorId)} → posición #${posicion} · pago registrado`)
+    }
+    return true
+  }
+
+  const eliminarTurno = async (id) => {
+    const { error } = await supabase.from('turnos').delete().eq('id', id)
+    if (error) { showToast('Error al eliminar turno.', 'err'); return false }
+    setTurnos((prev) => prev.filter((t) => t.id !== id))
+    showToast('🗑️ Turno eliminado.', 'warn')
     return true
   }
 
@@ -171,6 +198,18 @@ export function AppProvider({ children }) {
     if (error) { showToast('Error al guardar fecha base.', 'err'); return false }
     setFechaBase(fecha)
     showToast('📅 Fecha base guardada.')
+    return true
+  }
+
+  /* ── FECHA EVENTO ───────────────────────────────────────── */
+  const guardarFechaEvento = async (fecha) => {
+    if (!fecha) { showToast('Selecciona una fecha.', 'warn'); return false }
+    const { error } = await supabase
+      .from('configuracion')
+      .upsert({ key: 'fecha_evento', value: fecha }, { onConflict: 'key' })
+    if (error) { showToast('Error al guardar fecha del evento.', 'err'); return false }
+    setFechaEvento(fecha)
+    showToast('📅 Fecha del evento guardada.')
     return true
   }
 
@@ -266,13 +305,13 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider
       value={{
-        integrantes, pagos, gastos, turnos, fechaBase,
+        integrantes, pagos, gastos, turnos, fechaBase, fechaEvento,
         loading, toast, showToast,
         agregarIntegrante, eliminarIntegrante,
         registrarPago, eliminarPago,
         registrarGasto, eliminarGasto,
-        anotarLlegada, resetTurnos,
-        guardarFechaBase,
+        anotarLlegada, eliminarTurno, resetTurnos,
+        guardarFechaBase, guardarFechaEvento,
         importarDatos, borrarTodo,
         nombreJugador, totalPagado,
         loadData,

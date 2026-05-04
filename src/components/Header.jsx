@@ -21,7 +21,7 @@ export default function Header() {
   return (
     <>
       <header>
-        <div className="logo">⚽ Liga <span>PRO</span></div>
+        <div className="logo">🏀🇩🇴 Liga <span>La Dominicana</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div id="live-clock">{clock}</div>
           {isAdmin ? (
